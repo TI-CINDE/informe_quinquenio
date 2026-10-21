@@ -127,6 +127,21 @@ table.qtab{min-width:48rem;margin-bottom:1rem}
 .mk-si{background:var(--ok-bg);color:var(--ok-ink)}.mk-no{background:var(--low-bg);color:var(--low-ink)}.mk-sin{background:var(--mid-bg);color:var(--mid-ink)}
 .qrel{font-size:.8125rem;color:var(--ink-3);margin-top:.3rem}
 .qev .resp{margin-top:.4rem}
+.mnota{font-size:.8125rem;color:var(--ink-3);margin:0 0 .5rem}
+.mg{margin:0 0 1rem}
+.mrow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.1fr) minmax(0,1fr) 6.5rem;gap:1rem;align-items:start;padding:.7rem .25rem;border-top:1px solid var(--line);font-size:.875rem;line-height:1.45}
+.mhd{font-size:.75rem;color:var(--ink-3);font-weight:500;border-top:0;padding-bottom:.3rem}
+.mhd>div:last-child{text-align:right}
+.mt{font-weight:600;font-size:.9rem}
+.code{position:relative;cursor:help;font-family:inherit;color:var(--ink);display:inline-block;font-size:.72rem;font-weight:600;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.05rem .4rem;margin-right:.45rem;vertical-align:1px}
+.code .tip{display:none;position:absolute;left:0;top:calc(100% + .4rem);z-index:20;width:max-content;max-width:min(22rem,80vw);white-space:normal;text-align:left;background:var(--ink);color:var(--surface);font-size:.78rem;font-weight:500;line-height:1.35;padding:.45rem .6rem;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.code:hover .tip,.code:focus-visible .tip,.code.open .tip{display:block}
+.mo{font-size:.78rem;color:var(--ink-3);margin-top:.2rem}
+.mpen{color:var(--ink-2)}
+.mlab{display:none}
+.mav .mp{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.mav .track{margin-top:.35rem;height:.45rem}
+@media (max-width:760px){.mhd{display:none}.mrow{grid-template-columns:1fr;gap:.35rem}.mlab{display:block;font-size:.72rem;color:var(--ink-3);font-weight:500}.mav .mp{text-align:left}}
 .mc-sin{padding:.6rem .5rem;font-size:.9375rem}
 .mc-sin b{display:block}
 .mc-sin span{font-size:.875rem;color:var(--ink-3)}
@@ -429,6 +444,24 @@ function pintarMinciencias(C){
     const bd=el('tbody');lst.forEach(m=>{const tr=el('tr');tr.append(el('td',null,m.meta),el('td',null,m.tipo),el('td',null,m.logrado),el('td',null,m.pendiente),el('td','n',(Number(m.porcentaje)||0)+'%'));bd.appendChild(tr);});
     tb.appendChild(bd);tw.appendChild(tb);return tw;};
   const nombreAcc=a=>a?(String(a.accion).startsWith(a.programa_id)?a.accion:`${a.programa_id} · ${a.accion}`):'';
+  const progN={};D.programas.forEach(p=>{progN[p.programa_id]=p.programa;});
+  const gridMetas=(lst)=>{const g=el('div','mg');
+    const hd=el('div','mrow mhd');['Meta','Logrado','Pendiente','Avance'].forEach(x=>hd.appendChild(el('div',null,x)));g.appendChild(hd);
+    lst.slice().sort((x,y)=>(Number(y.porcentaje)||0)-(Number(x.porcentaje)||0)||String(x.meta_id).localeCompare(String(y.meta_id),'es',{numeric:true})).forEach(m=>{
+      const a=accN[m.accion_id],v=Number(m.porcentaje)||0;
+      const r=el('div','mrow');
+      const c1=el('div','mmeta');const t1=el('div','mt');
+      const acc=a?String(a.accion).replace(/^P\d+-N\s*/,''):'';
+      const info=`${progN[m.programa_id]||m.programa_id}`+(acc?` · ${acc}`:'');
+      const cb=el('button','code',m.accion_id);cb.type='button';cb.setAttribute('aria-label',`${m.accion_id}: ${info}`);cb.setAttribute('aria-expanded','false');
+      const tip=el('span','tip',info);tip.setAttribute('role','tooltip');cb.appendChild(tip);
+      cb.addEventListener('click',e=>{e.stopPropagation();const o=cb.classList.toggle('open');cb.setAttribute('aria-expanded',String(o));document.querySelectorAll('.code.open').forEach(x=>{if(x!==cb){x.classList.remove('open');x.setAttribute('aria-expanded','false');}});});
+      t1.append(cb,document.createTextNode(m.meta));c1.appendChild(t1);
+      const c2=el('div','mlog');c2.append(el('span','mlab','Logrado'),document.createTextNode(m.logrado||'—'));
+      const c3=el('div','mpen');c3.append(el('span','mlab','Pendiente'),document.createTextNode(m.pendiente||'—'));
+      const c4=el('div','mav');c4.append(el('div','mp',v+'%'),barra(v));
+      r.append(c1,c2,c3,c4);g.appendChild(r);});
+    return g;};
   dims.forEach(d=>{
     const dw=el('div','dim');dw.appendChild(el('h3',null,d.n));
     const modo=mcv.dim[d.n]||'logros';
@@ -468,7 +501,7 @@ function pintarMinciencias(C){
       const b=el('button','row');b.type='button';b.setAttribute('aria-expanded',String(ab));
       const nm=el('span','nm');nm.appendChild(el('span',null,(ab?'▾ ':'▸ ')+c.criterio));
       const partes=[];
-      if(mp.length)partes.push(`${mp.length} ${mp.length===1?'meta':'metas'} del plan`,`${accIds.length} ${accIds.length===1?'acción':'acciones'}`);else partes.push('Sin metas del plan');
+      if(mp.length)partes.push(`${mp.length} ${mp.length===1?'meta':'metas'} del plan, de ${accIds.length} ${accIds.length===1?'acción':'acciones'}`);else partes.push('Sin metas del plan');
       if(mf.length)partes.push(`${mf.length} fuera del plan`);
       if(lg.length)partes.push(`${lg.length} ${lg.length===1?'logro adicional':'logros adicionales'}`);
       nm.appendChild(el('span','mc-sub',partes.join(' · ')));
@@ -476,17 +509,9 @@ function pintarMinciencias(C){
       b.addEventListener('click',()=>{ab?mcv.cats.delete(c.categoria_id):mcv.cats.add(c.categoria_id);pintar();});
       w.appendChild(b);
       if(ab){const body=el('div','mc-body');body.appendChild(el('p','que',c.que_evalua));
-        accIds.forEach(aid=>{const a=accN[aid];const lm=mp.filter(m=>m.accion_id===aid);const key=c.categoria_id+'|'+aid;const ao=mcv.acc.has(key);
-          const va=Math.round(prom(lm.map(m=>Number(m.porcentaje)||0)));
-          const ab2=el('button','row');ab2.type='button';ab2.setAttribute('aria-expanded',String(ao));
-          const n2=el('span','nm');n2.appendChild(el('span',null,(ao?'▾ ':'▸ ')+nombreAcc(a)));n2.appendChild(el('span','mc-sub',`${lm.length} ${lm.length===1?'meta':'metas'} en esta categoría`));
-          ab2.append(n2,barra(va),el('span','pc',va+'%'));
-          ab2.addEventListener('click',()=>{ao?mcv.acc.delete(key):mcv.acc.add(key);pintar();});
-          body.appendChild(ab2);
-          if(ao){const dd=el('div','det');dd.appendChild(tablaMetas(lm));body.appendChild(dd);}
-        });
-        if(mf.length){body.appendChild(el('div','sub','Metas fuera del plan: agregadas en la planeación anual (no entran en el promedio)'));const dd=el('div','det');
-          const lst=mf.map(m=>({...m,meta:`${nombreAcc(accN[m.accion_id])}: ${m.meta}`}));dd.appendChild(tablaMetas(lst));body.appendChild(dd);}
+        body.appendChild(el('p','mnota','Cada meta del plan aparece en una sola categoría. Pase el cursor o haga clic sobre el código para ver el programa y la acción de la que viene. Las metas están ordenadas de mayor a menor avance.'));
+        body.appendChild(gridMetas(mp));
+        if(mf.length){body.appendChild(el('div','sub','Metas fuera del plan: agregadas en la planeación anual (no entran en el promedio)'));body.appendChild(gridMetas(mf));}
         if(lg.length){body.appendChild(el('div','sub','Logros adicionales: resultados de los informes anuales que no son metas del plan'));const dd=el('div','det'),tw=el('div','tw'),tb=el('table'),th=el('thead'),hr=el('tr');
           [['Año',''],['Logro',''],['Programa',''],['Fuente','']].forEach(([x,cl])=>hr.appendChild(el('th',cl,x)));th.appendChild(hr);tb.appendChild(th);
           const bd=el('tbody');lg.forEach(x=>{const tr=el('tr');tr.append(el('td',null,x.anio),el('td',null,x.logro),el('td',null,x.programa_id),el('td',null,x.fuente));bd.appendChild(tr);});
@@ -501,6 +526,7 @@ function pintarMinciencias(C){
 }
 function cambiarVista(v){mcv.tab=v;const p=v==='prog';$('tab-prog').setAttribute('aria-selected',String(p));$('tab-mc').setAttribute('aria-selected',String(!p));$('vista-programas').classList.toggle('hidden',!p);$('vista-minciencias').classList.toggle('hidden',p);pintar();}
 $('tab-prog').addEventListener('click',()=>cambiarVista('prog'));
+document.addEventListener('click',()=>document.querySelectorAll('.code.open').forEach(x=>{x.classList.remove('open');x.setAttribute('aria-expanded','false');}));
 $('tab-mc').addEventListener('click',()=>cambiarVista('mc'));
 $('mc-abrir').addEventListener('click',()=>{(D.minciencias||[]).forEach(c=>mcv.cats.add(c.categoria_id));pintar();});
 $('mc-cerrar').addEventListener('click',()=>{mcv.cats.clear();mcv.acc.clear();pintar();});
